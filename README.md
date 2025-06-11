@@ -1,0 +1,2 @@
+# KTdsTraining
+ktds AI edu 
