@@ -29,5 +29,7 @@
         "env.bak{,/**}",
         "venv.bak{,/**}",
         ".vscode{,/**}"
-    ]
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/dc6618c1-53d2-4bc8-ab82-68140c3fbde1/resourceGroups/sxh-rg/providers/Microsoft.Web/sites/ktdsmvp031",
+    "appService.deploySubpath": "."
 }
