@@ -90,7 +90,7 @@ def normalize_verdict(text):
 def parse_markdown_response(markdown_text):
     parsed = {}
 
-    parsed['rule'] = re.search(r"##+\s*(?:📘\s*)?Rule[:：]?\s*(.+)", markdown_text)
+    parsed['rule'] = re.search(r"##+\s*(?:[\W_]*\s*)?Rule[:：]?\s*(.+)", markdown_text)
     parsed['severity'] = re.search(r"\*\*등급\*\*: *(.+)", markdown_text)
     parsed['category'] = re.search(r"\*\*범주\*\*: *(.+)", markdown_text)
     parsed['description'] = re.search(
@@ -164,8 +164,9 @@ if "analysis_result" in st.session_state:
             st.markdown("**🧠 정탐/오탐 여부**: :green[`정탐`]")  
             if result.get("difficulty"):
                 st.markdown(f"**🛠️ 수정 난이도**: `{result['difficulty']}`")
+                st.info("⚠️ 생성된 코드는 AI가 제안한 예시이며, 개발자의 검토 후 반영되어야 합니다.")
         elif result['verdict'] == "오탐":
-            st.markdown("**🧠 정탐/오탐 여부**: :orange[`오탐`]")  
+            st.markdown("**🧠 정탐/오탐 여부**: :orange[`오탐`]") 
         else:
             st.markdown("**🧠 정탐/오탐 여부**: :red[`알 수 없음`]")  
     else:
