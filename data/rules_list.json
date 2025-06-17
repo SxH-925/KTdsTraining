@@ -1,0 +1,31 @@
+{
+  "Python": [
+    { "title": "Functions and methods should only return expected values" },
+    { "title": "Non-empty statements should change control flow or have at least one side-effect" },
+    { "title": "Einops pattern should be valid" },
+    { "title": "Subclasses of torch.nn.Module should call the initializer" },
+    { "title": "Transformers should not be accessed directly when a Scikit-Learn Pipeline uses caching" },
+    { "title": "datetime.datetime objects should not be compared with datetime.date objects" },
+    { "title": "offset-naive datetime.time and datetime.datetime objects should not be compared with offset-aware ones" },
+    { "title": "The abs_tol parameter should be provided when using math.isclose to compare values to 0" },
+    { "title": "Equality checks should not be made against numpy.nan" },
+    { "title": "Django signal handler functions should have the '@receiver' decorator on top of all other decorators" },
+    { "title": "Accessing sequence elements should not trigger an IndexError" },
+    { "title": "Unpacking should be done with the same number of elements of the iterable" },
+    { "title": "Collections should not be modified while they are iterated" },
+    { "title": "Regex patterns following a possessive quantifier should not always fail" },
+    { "title": "Variables, classes and functions should be either defined or imported" },
+    { "title": "memory parameter should be specified for Scikit-Learn Pipeline" },
+    { "title": "Docstrings should be defined" },
+    { "title": "Unused function parameters should be removed" },
+    { "title": "The print statement should not be used" },
+    { "title": "Constants should not be used as conditions" }
+  ],
+  "Java": [
+    { "title": "String literals should not be duplicated" },
+    { "title": "Class names should comply with a naming convention" }
+  ],
+  "JavaScript": [
+    { "title": "Local variables should not shadow variables from outer scopes" }
+  ]
+}
