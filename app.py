@@ -64,6 +64,7 @@ with st.expander("🛠 분석 정보 입력", expanded=True):
     col_lang, col_rule = st.columns([1, 3])
     with col_lang:
         language = st.selectbox("언어", ["Python", "Java", "JavaScript"], index=0)
+        language = language.lower()  # RAG 처리 및 룰 필터링 일관성 확보
 
     with col_rule:
         rule_list = load_rule_list(language)
