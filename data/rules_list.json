@@ -26,6 +26,6 @@
     { "title": "Class names should comply with a naming convention" }
   ],
   "JavaScript": [
-    { "title": "Local variables should not shadow variables from outer scopes" }
+    { "title": "switch statements should have default clauses" }
   ]
 }
