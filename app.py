@@ -6,7 +6,9 @@ from streamlit_ace import st_ace
 from config import load_system_prompt, load_rule_list, search_endpoint, search_api_key, index_name
 from parser import parse_markdown_response
 from llm import get_openai_response, regenerate_fix_code
+from config import load_system_prompt
 
+system_prompt = load_system_prompt()
 
 st.set_page_config(page_title="CodeEyes Assistant", layout="wide")
 
@@ -17,11 +19,37 @@ if st.sidebar.button("🧰 MVP 과제", use_container_width=True):
 
 # --- 헤더 ---
 st.markdown("""
-<div style='padding: 1.5rem 1rem; background: linear-gradient(90deg, #EEAECA 0%, #94BBE9 100%); border-radius: 0.75rem;'>
-  <h1 style='color: white; font-size: 2.2rem; margin-bottom: 0.5rem;'>⌨️ CodeEyes Assistant</h1>
-  <p style='color: #f0f0f0; font-size: 1.1rem;'>💡 SonarQube 룰 기반 코드 품질 분석 및 수정 코드 제안을 도와드립니다.</p>
+<style>
+@keyframes wave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.wave-header {
+  animation: wave 8s ease-in-out infinite;
+  background: linear-gradient(270deg, #EEAECA, #94BBE9);
+  background-size: 400% 400%;
+  padding: 1.5rem 1rem;
+  border-radius: 0.75rem;
+}
+.wave-header h1 {
+  color: white;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+}
+.wave-header p {
+  color: #f0f0f0;
+  font-size: 1.1rem;
+}
+</style>
+
+<div class='wave-header'>
+  <h1>⌨️ CodeEyes Assistant</h1>
+  <p>💡 SonarQube 룰 기반 코드 품질 분석 및 수정 코드 제안을 도와드립니다.</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 st.divider()
 
@@ -122,9 +150,17 @@ if "analysis_result" in st.session_state:
     if followup:
         st.markdown("---")
         st.markdown("#### 💬 추가 질문에 대한 AI의 답변")
-        st.session_state.messages.append({"role": "user", "content": followup})
+
+        # 시스템 프롬프트를 다시 포함한 메시지 재구성
+        followup_messages = [
+            {"role": "system", "content": system_prompt},  # 다시 주입
+        ] + st.session_state.messages[1:]  # 기존 user-assistant 기록 유지
+
+        followup_messages.append({"role": "user", "content": followup + "\n\n이 질문에 대한 답변만 해주고, 다른 분석 결과 항목은 반복하지 않아도 됩니다."})
+
         with st.spinner("답변 생성 중..."):
-            followup_response = get_openai_response(st.session_state.messages, use_rag=True)
+            followup_response = get_openai_response(followup_messages, use_rag=True)
+
         st.session_state.messages.append({"role": "assistant", "content": followup_response})
         st.session_state.followup_response = followup_response
 
