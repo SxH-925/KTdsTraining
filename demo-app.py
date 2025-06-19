@@ -23,7 +23,7 @@ chat_client = AzureOpenAI(
     api_key=openai_api_key
 )
 
-st.set_page_config(page_title="SonarQube 룰 분석 Assistant", layout="wide")
+st.set_page_config(page_title="CodeInspection Assistant", layout="wide")
 
 # --- 사이드바 추가 ---
 st.sidebar.image("data/logo.png", width=100)
@@ -31,8 +31,14 @@ if st.sidebar.button("🧰 MVP 과제", use_container_width=True):
     st.session_state.menu = "mvp"
 
 # --- 메인 화면 헤더 ---
-st.title("⌨️ CodeEyes Assistant")
-st.caption("💡 SonarQube 룰 기반 코드 품질 분석 및 수정 코드 제안을 도와드립니다.")
+st.markdown("""
+<div style='padding: 1.5rem 1rem; background: linear-gradient(90deg, #EEAECA 0%, #94BBE9 100%); border-radius: 0.75rem;'>
+  <h1 style='color: white; font-size: 2.2rem; margin-bottom: 0.5rem;'>⌨️ CodeEyes Assistant</h1>
+  <p style='color: #f0f0f0; font-size: 1.1rem;'>💡 SonarQube 룰 기반 코드 품질 분석 및 수정 코드 제안을 도와드립니다.</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.divider()
 
 # --- Load system prompt from file ---
 def load_system_prompt():
@@ -119,13 +125,26 @@ def parse_markdown_response(markdown_text):
 
 # --- 수정 코드만 재생성하는 함수 ---
 def regenerate_fix_code():
-    st.session_state.messages.append({
+    # 기존 메시지를 복사하여 사용 (원본은 건드리지 않음)
+    temp_messages = st.session_state.messages.copy()
+
+    # 마지막 user 메시지 제거하고 새로 구성
+    if temp_messages[-1]["role"] == "user" and "수정 코드만 다시 생성해줘" in temp_messages[-1]["content"]:
+        temp_messages.pop()
+
+    temp_messages.append({
         "role": "user",
         "content": f"위 코드에 대해 수정 코드만 다시 생성해줘. 불필요한 설명 없이 코드 블록만 출력해줘."
     })
-    response = get_openai_response()
-    st.session_state.messages.append({"role": "assistant", "content": response})
-    return response
+
+    rag_params = {}  # regenerate는 RAG 비활성화로 진행
+    response = chat_client.chat.completions.create(
+        model=chat_model,
+        messages=temp_messages,
+        extra_body=rag_params
+    )
+    return response.choices[0].message.content
+
 
 # --- Input UI + Result ---
 with st.expander("🛠 분석 정보 입력", expanded=True):
@@ -195,6 +214,7 @@ if "analysis_result" in st.session_state:
     else:
         st.markdown("**🧠 정탐/오탐 여부**: :red[`분석 실패 또는 미확인`]")
 
+    # 수정 코드 제안 및 다운로드 버튼
     if result['verdict'] == "정탐":
         if result['fix_code']:
             st.markdown("### ✅ 수정 코드 제안")
@@ -202,19 +222,27 @@ if "analysis_result" in st.session_state:
         else:
             st.warning("✅ 정탐으로 판단되었지만, 수정 코드가 제공되지 않았습니다. 추가 질문으로 요청해 보세요.")
 
-        st.download_button(
-            label="📥 분석 결과 다운로드",
-            data=json.dumps(result, ensure_ascii=False, indent=2),
-            file_name="analysis_result.json",
-            mime="application/json",
-            use_container_width=True
-        )
+        # 버튼 두 개를 같은 행에 가로 50%씩 배치
+        btn_dl, btn_regen = st.columns(2)
+        with btn_dl:
+            st.download_button(
+                label="📥 분석 결과 다운로드",
+                data=json.dumps(result, ensure_ascii=False, indent=2),
+                file_name="analysis_result.json",
+                mime="application/json",
+                use_container_width=True
+            )
+        with btn_regen:
+            if st.button("🔄 수정 코드 다시 만들기", use_container_width=True):
+                with st.spinner("수정 코드 다시 생성 중..."):
+                    regenerated = regenerate_fix_code()
+                    st.session_state.regenerated_code = regenerated  # 상태로 저장
 
-        if st.button("🔄 수정 코드 다시 만들기", use_container_width=True):
-            with st.spinner("수정 코드 다시 생성 중..."):
-                regenerated = regenerate_fix_code()
-                st.markdown("### 🔄 새로 생성된 수정 코드")
-                st.code(regenerated, language=language.lower())
+    # 새로 생성된 코드 출력 (항상 전체 너비)
+    if "regenerated_code" in st.session_state:
+        st.markdown("### 🔄 새로 생성된 수정 코드")
+        st.code(st.session_state.regenerated_code, language=language.lower())
+
 
     st.markdown("---")
     followup = st.text_area("💬 추가 질문을 입력하세요", key="followup_input")
@@ -229,5 +257,8 @@ if "analysis_result" in st.session_state:
         st.session_state.followup_response = followup_response
 
     if "followup_response" in st.session_state:
+        answer = st.session_state.followup_response
+        if "The requested information is not found" in answer:
+            answer = "**죄송합니다. 이 AI는 SonarQube 기반 코드 품질 점검과 룰 설명에만 응답합니다.**"
         st.markdown("**AI 답변:**")
-        st.markdown(st.session_state.followup_response)
+        st.markdown(answer)
