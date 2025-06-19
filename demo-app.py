@@ -105,7 +105,7 @@ def parse_markdown_response(markdown_text):
         "category": parsed['category'].group(1).strip() if parsed['category'] else None,
         "description": parsed['description'].group(1).strip() if parsed['description'] else None,
         "verdict": normalize_verdict(parsed['verdict'].group(1).strip()) if parsed['verdict'] else None,
-        "difficulty": parsed['difficulty'].group(1).strip() if parsed['difficulty'] else None,
+        "difficulty": parsed['difficulty'].group(1).strip() if parsed['difficulty'] else None,             
         "fix_code": parsed['fix_code'].group(1).strip() if parsed['fix_code'] else None,
     }
 
@@ -158,6 +158,10 @@ if "analysis_result" in st.session_state:
     st.markdown(f"**등급**: {result['severity']}  ")
     st.markdown(f"**범주**: {result['category']}")
     st.markdown(f"**설명**: {result['description'] if result['description'] else 'N/A'}")
+    # 🧩 룰과 코드의 관련성 경고 표시
+    if result.get("relevance") == "없음":
+        st.warning("⚠️ 선택한 룰과 입력한 코드 사이의 관련성이 낮거나 없습니다. GPT의 응답이 부정확할 수 있습니다.")
+
 
     if result['verdict']:
         if result['verdict'] == "정탐":
@@ -179,6 +183,13 @@ if "analysis_result" in st.session_state:
         else:
             st.warning("✅ 정탐으로 판단되었지만, 수정 코드가 제공되지 않았습니다. 추가 질문으로 요청해 보세요.")
 
+        # ✅ 결과 다운로드 버튼
+        st.download_button(
+            label="📥 분석 결과 다운로드",
+            data=json.dumps(result, ensure_ascii=False, indent=2),
+            file_name="analysis_result.json",
+            mime="application/json"
+        )
     st.markdown("---")
     followup = st.text_area("💬 추가 질문을 입력하세요", key="followup_input")
 
