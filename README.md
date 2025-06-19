@@ -57,22 +57,30 @@ SonarQube 정적 분석 위반 항목을 GPT 기반 AI로 분석하여
 ```bash
 .
 ├── app.py (Streamlit 메인 실행 파일)
+├── config.py (환경변수 로딩 및 설정값 관리)
+├── parser.py (Markdown 응답 파싱 모듈)
+├── llm.py (OpenAI 연동 및 RAG응답 처리)
 ├── prompt/
-│   └── system_prompt.md
+│   └── system_prompt.md (시스템 프롬프트 텍스트)
 ├── data/
-│   └── rules_list.json
-│   └── logo.png
+│   └── rules_list.json (룰 목록 JSON)
+│   └── logo.png (UI에 사용할 로고)
 ├── .env  # 환경변수 (OpenAI, Azure Search 키 등)
 
 ```
 ## .env 예시
-OPENAI_API_KEY=your-openai-key
-OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
-CHAT_MODEL=gpt-4o
-SEARCH_ENDPOINT=https://your-search-instance.search.windows.net/
-SEARCH_API_KEY=your-search-key
-INDEX_NAME=sonarqube-rules-index
+- OPENAI_API_KEY=your-openai-key
+- OPENAI_ENDPOINT=https://your-endpoint.openai.azure.com/
+- CHAT_MODEL=gpt-4o
+- SEARCH_ENDPOINT=https://your-search-instance.search.windows.net/
+- SEARCH_API_KEY=your-search-key
+- INDEX_NAME=sonarqube-rules-index
 
+## 향후 확장 고려 기능
+- 소스코드정적분석 시스템 API 와 연결 (자동화)
+- 룰 학습 모델 튜닝 (RAG 정규화)
+- Token 최적화를 통한 비용관리
+- 코드 리뷰 도구로 확장
 
 ## 라이선스
 본 프로젝트는 사내 PoC / 교육 목적으로 활용되며 외부 배포 시 별도 라이선스 고려 필요

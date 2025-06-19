@@ -56,7 +56,7 @@ if "messages" not in st.session_state:
     ]
 
 # --- LLM 응답 처리 함수 ---
-def get_openai_response(use_rag=True):
+def get_openai_response(messages=None, use_rag=True, search_endpoint=None, search_api_key=None, index_name=None):
     rag_params = {
         "data_sources": [
             {
@@ -71,14 +71,18 @@ def get_openai_response(use_rag=True):
                 }
             }
         ]
-    } if use_rag else {}
+    } if use_rag and search_endpoint and search_api_key and index_name else {}
+
+    if messages is None:
+        messages = st.session_state.messages  # 기본값으로 세션의 메시지 사용
 
     response = chat_client.chat.completions.create(
         model=chat_model,
-        messages=st.session_state.messages,
+        messages=messages,
         extra_body=rag_params
     )
     return response.choices[0].message.content
+
 
 # --- Markdown 파싱 함수 ---
 def normalize_verdict(text):
