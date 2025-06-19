@@ -1,4 +1,4 @@
-# 🧠 CodeEyes Assistant (v0.1)
+# 🧠 CodeEyes Assistant (v1.0)
 
 SonarQube 정적 분석 위반 항목을 GPT 기반 AI로 분석하여  
 정탐/오탐 여부를 판단하고, 정탐인 경우 **자동 수정 코드**를 제안하는 개발자용 AI Agent입니다.
