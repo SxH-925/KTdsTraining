@@ -82,6 +82,28 @@ SonarQube 정적 분석 위반 항목을 GPT 기반 AI로 분석하여
 - Token 최적화를 통한 비용관리
 - 코드 리뷰 도구로 확장
 
+## 테스트 데이터
+Python - Docstrings should be defined def
+    def normalize_verdict(text):
+    if not text:
+        return None
+    lowered = text.lower()
+    if "정탐" in lowered:
+        return "정탐"
+    elif "오탐" in lowered:
+        return "오탐"
+    return None
+
+JS - switch statements should have default clauses
+switch (param) {  //missing default clause
+  case 0:
+    doSomething();
+    break;
+  case 1:
+    doSomethingElse();
+    break;
+}
+
 ## 라이선스
 본 프로젝트는 사내 PoC / 교육 목적으로 활용되며 외부 배포 시 별도 라이선스 고려 필요
 

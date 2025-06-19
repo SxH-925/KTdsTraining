@@ -53,6 +53,7 @@ st.markdown("""
 
 st.divider()
 
+
 # --- 세션 초기화 ---
 if "messages" not in st.session_state:
     st.session_state.followup_response = ""
@@ -71,8 +72,10 @@ with st.expander("🛠 분석 정보 입력", expanded=True):
 
     rulename = selected_rule.split(" - ")[0] if selected_rule else ""
 
-    st.markdown("**🔤 분석할 코드를 입력하세요:**")
-    code = st_ace(language=language.lower(), theme="dracula", height=300, key="ace_input", auto_update=True)
+    st.markdown("**🔤 분석할 코드를 입력하세요:**") 
+    dark_mode = st.toggle("🌙 에디터 다크 모드", value=True)
+    theme = "dracula" if dark_mode else "github"
+    code = st_ace(language=language.lower(), theme=theme, height=300, key="ace_input", auto_update=True)
 
     analyze_button = st.button("🚀 Analyze", use_container_width=True, disabled=not (rulename.strip() and code and code.strip()))
 
