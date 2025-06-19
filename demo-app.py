@@ -27,9 +27,7 @@ st.set_page_config(page_title="SonarQube 룰 분석 Assistant", layout="wide")
 
 # --- 사이드바 추가 ---
 st.sidebar.image("data/logo.png", width=100)
-st.sidebar.markdown("---")
-st.sidebar.markdown("#### 메뉴")
-if st.sidebar.button("✅ MVP 과제", use_container_width=True):
+if st.sidebar.button("🧰 MVP 과제", use_container_width=True):
     st.session_state.menu = "mvp"
 
 # --- 메인 화면 헤더 ---
@@ -93,21 +91,41 @@ def parse_markdown_response(markdown_text):
     parsed['rule'] = re.search(r"##+\s*(?:[\W_]*\s*)?Rule[:：]?\s*(.+)", markdown_text)
     parsed['severity'] = re.search(r"\*\*등급\*\*: *(.+)", markdown_text)
     parsed['category'] = re.search(r"\*\*범주\*\*: *(.+)", markdown_text)
-    parsed['description'] = re.search(
-      r"\*\*설명\*\*: *\n?(.+?)(?=\n\*\*오탐/정탐 여부\*\*:)", markdown_text, re.DOTALL)
+    parsed['description'] = re.search(r"\*\*설명\*\*: *\n?(.+?)(?=\n\*\*오탐/정탐 여부\*\*:)", markdown_text, re.DOTALL)
     parsed['verdict'] = re.search(r"\*\*오탐/정탐 여부\*\*: *`?([^\n*`]+)`?", markdown_text)
     parsed['difficulty'] = re.search(r"\*\*수정 난이도\*\*: *`?([^\n*`]+)`?", markdown_text)
     parsed['fix_code'] = re.search(r"```(?:[a-zA-Z]+)?\n(.+?)\n```", markdown_text, re.DOTALL)
+    parsed['relevance'] = re.search(r"\*\*관련성\*\*: *`?([^\n*`]+)`?", markdown_text)
 
-    return {
+    result = {
         "rule": parsed['rule'].group(1).strip() if parsed['rule'] else None,
         "severity": parsed['severity'].group(1).strip() if parsed['severity'] else None,
         "category": parsed['category'].group(1).strip() if parsed['category'] else None,
         "description": parsed['description'].group(1).strip() if parsed['description'] else None,
         "verdict": normalize_verdict(parsed['verdict'].group(1).strip()) if parsed['verdict'] else None,
-        "difficulty": parsed['difficulty'].group(1).strip() if parsed['difficulty'] else None,             
+        "difficulty": parsed['difficulty'].group(1).strip() if parsed['difficulty'] else None,
         "fix_code": parsed['fix_code'].group(1).strip() if parsed['fix_code'] else None,
+        "relevance": parsed['relevance'].group(1).strip() if parsed['relevance'] else "없음"
     }
+
+    if result["verdict"] == "정탐" and not result["fix_code"]:
+        result["parse_error"] = "정탐인데 수정 코드가 없습니다"
+    elif result["verdict"] == "오탐" and not result["difficulty"]:
+        result["parse_error"] = "오탐인데 난이도 항목이 없습니다"
+    elif not result["verdict"]:
+        result["parse_error"] = "정탐/오탐 여부를 찾을 수 없습니다"
+
+    return result
+
+# --- 수정 코드만 재생성하는 함수 ---
+def regenerate_fix_code():
+    st.session_state.messages.append({
+        "role": "user",
+        "content": f"위 코드에 대해 수정 코드만 다시 생성해줘. 불필요한 설명 없이 코드 블록만 출력해줘."
+    })
+    response = get_openai_response()
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    return response
 
 # --- Input UI + Result ---
 with st.expander("🛠 분석 정보 입력", expanded=True):
@@ -124,7 +142,6 @@ with st.expander("🛠 분석 정보 입력", expanded=True):
 
     rulename = selected_rule.split(" - ")[0] if selected_rule else ""
 
-    # 코드 입력 및 미리보기: Ace editor 스타일 적용
     st.markdown("**🔤 분석할 코드를 입력하세요:**")
     code = st_ace(language=language.lower(), theme="monokai", height=300, key="ace_input", auto_update=True)
 
@@ -140,10 +157,10 @@ with st.expander("🛠 분석 정보 입력", expanded=True):
             result_markdown = get_openai_response()
             parsed_result = parse_markdown_response(result_markdown)
 
-            if not parsed_result['rule']:
+            if parsed_result.get("parse_error"):
                 st.markdown("#### [디버그] 응답 원문")
                 st.code(result_markdown)
-                st.error("❌ 분석 결과를 정상적으로 이해하지 못했습니다. 입력값을 다시 확인해 주세요.")
+                st.error(f"❌ 분석 결과를 정상적으로 이해하지 못했습니다. 원인: {parsed_result['parse_error']}")
                 st.stop()
 
             st.session_state.analysis_result = parsed_result
@@ -158,23 +175,25 @@ if "analysis_result" in st.session_state:
     st.markdown(f"**등급**: {result['severity']}  ")
     st.markdown(f"**범주**: {result['category']}")
     st.markdown(f"**설명**: {result['description'] if result['description'] else 'N/A'}")
-    # 🧩 룰과 코드의 관련성 경고 표시
-    if result.get("relevance") == "없음":
-        st.warning("⚠️ 선택한 룰과 입력한 코드 사이의 관련성이 낮거나 없습니다. GPT의 응답이 부정확할 수 있습니다.")
 
+    relevance = result.get("relevance", "").strip()
+    if relevance not in ["높음", "중간", "낮음", "없음"]:
+        st.warning(f"⚠️ 알 수 없는 관련성 값: `{relevance}` (GPT 응답 이상 가능성)")
+    elif relevance in ["없음", "낮음"]:
+        st.warning("⚠️ 선택한 룰과 입력한 코드 사이의 관련성이 낮거나 없습니다. GPT의 응답이 부정확할 수 있습니다.")
 
     if result['verdict']:
         if result['verdict'] == "정탐":
-            st.markdown("**🧠 정탐/오탐 여부**: :green[`정탐`]")  
+            st.markdown("**🧠 정탐/오탐 여부**: :green[`정탐`]")
             if result.get("difficulty"):
                 st.markdown(f"**🛠️ 수정 난이도**: `{result['difficulty']}`")
                 st.info("⚠️ 생성된 코드는 AI가 제안한 예시이며, 개발자의 검토 후 반영되어야 합니다.")
         elif result['verdict'] == "오탐":
-            st.markdown("**🧠 정탐/오탐 여부**: :orange[`오탐`]") 
+            st.markdown("**🧠 정탐/오탐 여부**: :orange[`오탐`]")
         else:
-            st.markdown("**🧠 정탐/오탐 여부**: :red[`알 수 없음`]")  
+            st.markdown("**🧠 정탐/오탐 여부**: :red[`알 수 없음`]")
     else:
-        st.markdown("**🧠 정탐/오탐 여부**: :red[`분석 실패 또는 미확인`]")  
+        st.markdown("**🧠 정탐/오탐 여부**: :red[`분석 실패 또는 미확인`]")
 
     if result['verdict'] == "정탐":
         if result['fix_code']:
@@ -183,13 +202,20 @@ if "analysis_result" in st.session_state:
         else:
             st.warning("✅ 정탐으로 판단되었지만, 수정 코드가 제공되지 않았습니다. 추가 질문으로 요청해 보세요.")
 
-        # ✅ 결과 다운로드 버튼
         st.download_button(
             label="📥 분석 결과 다운로드",
             data=json.dumps(result, ensure_ascii=False, indent=2),
             file_name="analysis_result.json",
-            mime="application/json"
+            mime="application/json",
+            use_container_width=True
         )
+
+        if st.button("🔄 수정 코드 다시 만들기", use_container_width=True):
+            with st.spinner("수정 코드 다시 생성 중..."):
+                regenerated = regenerate_fix_code()
+                st.markdown("### 🔄 새로 생성된 수정 코드")
+                st.code(regenerated, language=language.lower())
+
     st.markdown("---")
     followup = st.text_area("💬 추가 질문을 입력하세요", key="followup_input")
 
