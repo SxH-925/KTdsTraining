@@ -105,6 +105,7 @@ with st.expander("🛠 분석 정보 입력", expanded=True):
 
 # --- 분석 결과 ---
 if "analysis_result" in st.session_state:
+    # st.write("💬 요청 메시지:", st.session_state.messages)
     st.markdown("---")
     st.markdown("#### 📊 분석 결과")
 
@@ -125,7 +126,7 @@ if "analysis_result" in st.session_state:
         if result['verdict'] == "정탐" and result.get("difficulty"):
             st.markdown(f"**🛠️ 수정 난이도**: `{result['difficulty']}`")
             st.info("⚠️ 생성된 코드는 AI가 제안한 예시이며, 개발자의 검토 후 반영되어야 합니다.")
-
+    
     # 수정 코드 및 다운로드 버튼
     if result['verdict'] == "정탐":
         if result['fix_code']:

@@ -38,6 +38,6 @@ def parse_markdown_response(markdown_text):
     elif result["verdict"] == "오탐" and not result["difficulty"]:
         result["parse_error"] = "오탐인데 난이도 항목이 없습니다"
     elif not result["verdict"]:
-        result["parse_error"] = "정탐/오탐 여부를 찾을 수 없습니다"
+        result["parse_error"] = "정탐/오탐 여부 항목이 응답에 포함되지 않았습니다. 프롬프트나 응답 형식을 확인하세요."
 
     return result
